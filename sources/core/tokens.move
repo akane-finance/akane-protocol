@@ -1,14 +1,14 @@
 module akane::tokens {
     use sui::object::{Self, UID};
     use sui::coin::{Self, Coin};
-    use sui::tx_context::TxContext;
+    use sui::tx_context::{Self, TxContext};
     use sui::transfer;
 
-    // Wrapped token types
-    struct WBTC has drop {}
-    struct WETH has drop {}
-    struct WSOL has drop {}
-    struct WAVAX has drop {}
+    // Wrapped token types - adding necessary traits for Coin
+    struct WBTC has drop, store {}
+    struct WETH has drop, store {}
+    struct WSOL has drop, store {}
+    struct WAVAX has drop, store {}
 
     // Token capabilities
     struct TokenCap has key, store {
@@ -38,7 +38,7 @@ module akane::tokens {
             id: object::new(ctx),
             token_type: 1
         };
-        transfer::transfer(coin_in, tx_context::sender(ctx));
+        transfer::public_transfer(coin_in, tx_context::sender(ctx));
         token_cap
     }
 
@@ -47,7 +47,7 @@ module akane::tokens {
             id: object::new(ctx),
             token_type: 2
         };
-        transfer::transfer(coin_in, tx_context::sender(ctx));
+        transfer::public_transfer(coin_in, tx_context::sender(ctx));
         token_cap
     }
 
@@ -56,7 +56,7 @@ module akane::tokens {
             id: object::new(ctx),
             token_type: 3
         };
-        transfer::transfer(coin_in, tx_context::sender(ctx));
+        transfer::public_transfer(coin_in, tx_context::sender(ctx));
         token_cap
     }
 
@@ -65,7 +65,7 @@ module akane::tokens {
             id: object::new(ctx),
             token_type: 5
         };
-        transfer::transfer(coin_in, tx_context::sender(ctx));
+        transfer::public_transfer(coin_in, tx_context::sender(ctx));
         token_cap
     }
 }
