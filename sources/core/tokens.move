@@ -5,10 +5,10 @@ module akane::tokens {
     use sui::transfer;
 
     // Wrapped token types - adding necessary traits for Coin
-    struct WBTC has drop, store {}
-    struct WETH has drop, store {}
-    struct WSOL has drop, store {}
-    struct WAVAX has drop, store {}
+    struct WBTC has drop, copy, store {}
+    struct WETH has drop, copy, store {}
+    struct WSOL has drop, copy, store {}
+    struct WAVAX has drop, copy, store {}
 
     // Token capabilities
     struct TokenCap has key, store {

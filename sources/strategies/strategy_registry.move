@@ -3,7 +3,7 @@ module akane::strategy_registry {
     use sui::table::{Self, Table};
     use sui::transfer;
     use sui::tx_context::{Self, TxContext};
-    use akane::strategy_interface::StrategyInfo;
+    use akane::strategy_interface::{Self, StrategyInfo};
     use akane::events;
     use akane::constants;
 
@@ -42,10 +42,10 @@ module akane::strategy_registry {
         info: StrategyInfo,
         ctx: &mut TxContext
     ): u8 {
-        assert!(tx_context::sender(ctx) == registry.owner, constants::ERR_UNAUTHORIZED);
+        assert!(tx_context::sender(ctx) == registry.owner, constants::err_unauthorized());
         
         let strategy_id = registry.strategy_count + 1;
-        assert!(!table::contains(&registry.strategies, strategy_id), constants::ERR_STRATEGY_EXISTS);
+        assert!(!table::contains(&registry.strategies, strategy_id), constants::err_strategy_exists());
         
         table::add(&mut registry.strategies, strategy_id, info);
         registry.strategy_count = strategy_id;
@@ -63,7 +63,7 @@ module akane::strategy_registry {
         registry: &StrategyRegistry,
         strategy_id: u8
     ): &StrategyInfo {
-        assert!(table::contains(&registry.strategies, strategy_id), constants::ERR_STRATEGY_NOT_FOUND);
+        assert!(table::contains(&registry.strategies, strategy_id), constants::err_strategy_not_found());
         table::borrow(&registry.strategies, strategy_id)
     }
 
@@ -77,9 +77,10 @@ module akane::strategy_registry {
         strategy_id: u8,
         ctx: &mut TxContext
     ) {
-        assert!(tx_context::sender(ctx) == registry.owner, constants::ERR_UNAUTHORIZED);
-        assert!(table::contains(&registry.strategies, strategy_id), constants::ERR_STRATEGY_NOT_FOUND);
-        table::remove(&mut registry.strategies, strategy_id);
+        assert!(tx_context::sender(ctx) == registry.owner, constants::err_unauthorized());
+        assert!(table::contains(&registry.strategies, strategy_id), constants::err_strategy_not_found());
+        let strategy_info = table::remove(&mut registry.strategies, strategy_id);
+        strategy_interface::destroy_strategy_info(strategy_info);
     }
 
     public fun update_strategy(
@@ -89,9 +90,9 @@ module akane::strategy_registry {
         new_info: StrategyInfo,
         ctx: &mut TxContext
     ) {
-        assert!(tx_context::sender(ctx) == registry.owner, constants::ERR_UNAUTHORIZED);
-        assert!(table::contains(&registry.strategies, strategy_id), constants::ERR_STRATEGY_NOT_FOUND);
-        table::remove(&mut registry.strategies, strategy_id);
-        table::add(&mut registry.strategies, strategy_id, new_info);
+        assert!(tx_context::sender(ctx) == registry.owner, constants::err_unauthorized());
+        assert!(table::contains(&registry.strategies, strategy_id), constants::err_strategy_not_found());
+        let old_info = table::remove(&mut registry.strategies, strategy_id);
+        strategy_interface::destroy_strategy_info(old_info);
     }
 }

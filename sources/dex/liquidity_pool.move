@@ -4,19 +4,19 @@ module akane::liquidity_pool {
     use sui::coin::{Self, Coin};
     use sui::tx_context::{Self, TxContext};
     use sui::transfer;
-    use sui::math;
+    use std::u64;
     use sui::event;
-    
-    use akane::tokens::{WBTC, WETH, WSOL, WAVAX};
-    use akane::events;
-    use akane::constants;
 
+    // Error constants
+    const ERR_SLIPPAGE_TOO_HIGH: u64 = 10;
+    const ERR_INSUFFICIENT_AMOUNT: u64 = 11;
+    
     const FEE_NUMERATOR: u64 = 3;
     const FEE_DENOMINATOR: u64 = 1000; // 0.3% fee
     const MINIMUM_LIQUIDITY: u64 = 1000;
     const PRECISION: u64 = 1_000_000;
 
-    struct LiquidityPool<phantom CoinTypeA, phantom CoinTypeB> has key {
+    struct LiquidityPool<phantom CoinTypeA, phantom CoinTypeB> has key, store {
         id: UID,
         coin_a: Balance<CoinTypeA>,
         coin_b: Balance<CoinTypeB>,
@@ -26,7 +26,14 @@ module akane::liquidity_pool {
         last_block: u64
     }
 
-    struct LPToken<phantom CoinTypeA, phantom CoinTypeB> has key {
+    // Event struct
+    struct AddLiquidityEvent has copy, drop {
+        amount_a: u64,
+        amount_b: u64,
+        liquidity: u64
+    }
+
+    struct LPToken<phantom CoinTypeA, phantom CoinTypeB> has key, store {
         id: UID,
         amount: u64
     }
@@ -58,8 +65,8 @@ module akane::liquidity_pool {
         let balance_b = coin::into_balance(coin_b);
 
         let lp_tokens = if (pool.lp_supply == 0) {
-            let initial_lp_tokens = math::sqrt(amount_a * amount_b);
-            assert!(initial_lp_tokens > MINIMUM_LIQUIDITY, constants::ERR_INSUFFICIENT_AMOUNT);
+            let initial_lp_tokens = u64::sqrt(amount_a * amount_b);
+            assert!(initial_lp_tokens > MINIMUM_LIQUIDITY, ERR_INSUFFICIENT_AMOUNT);
             
             pool.lp_supply = initial_lp_tokens;
             initial_lp_tokens - MINIMUM_LIQUIDITY
@@ -67,7 +74,7 @@ module akane::liquidity_pool {
             let reserve_a = balance::value(&pool.coin_a);
             let reserve_b = balance::value(&pool.coin_b);
             
-            let lp_amount = math::min(
+            let lp_amount = u64::min(
                 (amount_a * pool.lp_supply) / reserve_a,
                 (amount_b * pool.lp_supply) / reserve_b
             );
@@ -78,6 +85,13 @@ module akane::liquidity_pool {
 
         balance::join(&mut pool.coin_a, balance_a);
         balance::join(&mut pool.coin_b, balance_b);
+
+        // Emit event directly in the module
+        event::emit(AddLiquidityEvent {
+            amount_a,
+            amount_b,
+            liquidity: lp_tokens
+        });
 
         LPToken<CoinTypeA, CoinTypeB> {
             id: object::new(ctx),
@@ -100,7 +114,7 @@ module akane::liquidity_pool {
         let denominator = (reserve_in * FEE_DENOMINATOR) + amount_in_with_fee;
         let amount_out = numerator / denominator;
 
-        assert!(amount_out >= min_amount_out, constants::ERR_SLIPPAGE_TOO_HIGH);
+        assert!(amount_out >= min_amount_out, ERR_SLIPPAGE_TOO_HIGH);
 
         balance::join(&mut pool.coin_a, coin::into_balance(coin_in));
         let out_balance = balance::split(&mut pool.coin_b, amount_out);

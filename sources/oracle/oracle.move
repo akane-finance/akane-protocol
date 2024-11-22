@@ -4,7 +4,6 @@ module akane::oracle {
     use sui::transfer;
     use sui::tx_context::{Self, TxContext};
     use akane::events;
-    use akane::constants;
 
     struct PriceOracle has key {
         id: UID,
@@ -13,7 +12,7 @@ module akane::oracle {
         owner: address
     }
 
-    struct Price has store {
+    struct Price has store, drop {
         value: u64,
         decimals: u8,
         last_update: u64
@@ -33,12 +32,13 @@ module akane::oracle {
             owner
         };
 
+        transfer::share_object(oracle);
+        
         let admin_cap = OracleAdminCap {
             id: object::new(ctx)
         };
-
+        
         transfer::transfer(admin_cap, owner);
-        transfer::share_object(oracle);
     }
 
     public fun update_price(

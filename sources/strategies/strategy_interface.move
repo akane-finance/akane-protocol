@@ -1,10 +1,10 @@
 module akane::strategy_interface {
-    use sui::object::{Self, UID};
-    use sui::tx_context::TxContext;
-    use akane::constants;
     use std::vector;
 
+    const ERR_INVALID_ALLOCATION: u64 = 6;
+
     struct StrategyInfo has store {
+
         name: vector<u8>,
         description: vector<u8>,
         allocations: vector<Allocation>,
@@ -27,6 +27,13 @@ module akane::strategy_interface {
         amount: u64
     }
 
+    public fun create_allocation(token_type: u8, target_percentage: u8): Allocation {
+        Allocation {
+            token_type,
+            target_percentage
+        }
+    }
+
     public fun create_strategy_info(
         name: vector<u8>,
         description: vector<u8>,
@@ -43,7 +50,7 @@ module akane::strategy_interface {
             total_allocation = total_allocation + allocation.target_percentage;
             i = i + 1;
         };
-        assert!(total_allocation == 100, constants::ERR_INVALID_ALLOCATION);
+        assert!(total_allocation == 100, ERR_INVALID_ALLOCATION);
 
         StrategyInfo {
             name,
