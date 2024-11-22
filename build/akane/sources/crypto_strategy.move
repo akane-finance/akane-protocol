@@ -1,4 +1,3 @@
-#[allow(lint(self_transfer))]
 module akane::crypto_strategy {
     use sui::object::{Self, UID};
     use sui::tx_context::TxContext;

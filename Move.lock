@@ -24,3 +24,11 @@ dependencies = [
 compiler-version = "1.38.1"
 edition = "2024"
 flavor = "sui"
+
+[env]
+
+[env.akane]
+chain-id = "66bc2b87"
+original-published-id = "0x1f171e582cdac2d6ed2e82458b548fed80571f3127a6fbbd7ac91ae5106befaf"
+latest-published-id = "0x1f171e582cdac2d6ed2e82458b548fed80571f3127a6fbbd7ac91ae5106befaf"
+published-version = "1"
