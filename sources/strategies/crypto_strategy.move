@@ -11,8 +11,8 @@ module akane::crypto_strategy {
 
     public fun initialize(_ctx: &mut TxContext): CryptoStrategy {
         let allocations = strategy_interface::create_allocations(vector[
-            (constants::btc_token(), 60),
-            (constants::eth_token(), 40)
+            strategy_interface::create_allocation_input(constants::btc_token(), 60),
+            strategy_interface::create_allocation_input(constants::eth_token(), 40)
         ]);
 
         CryptoStrategy {
