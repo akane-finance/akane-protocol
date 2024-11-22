@@ -1,11 +1,11 @@
-module sui_hedge_fund::strategy_registry {
+module akane::strategy_registry {
     use sui::object::{Self, UID};
     use sui::table::{Self, Table};
     use sui::transfer;
     use sui::tx_context::{Self, TxContext};
-    use sui_hedge_fund::strategy_interface::StrategyInfo;
-    use sui_hedge_fund::events;
-    use sui_hedge_fund::constants;
+    use akane::strategy_interface::StrategyInfo;
+    use akane::events;
+    use akane::constants;
 
     struct StrategyRegistry has key {
         id: UID,

@@ -1,7 +1,7 @@
-module sui_hedge_fund::strategy_interface {
+module akane::strategy_interface {
     use sui::object::{Self, UID};
     use sui::tx_context::TxContext;
-    use sui_hedge_fund::constants;
+    use akane::constants;
     use std::vector;
 
     struct StrategyInfo has store {

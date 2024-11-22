@@ -1,4 +1,4 @@
-module sui_hedge_fund::liquidity_pool {
+module akane::liquidity_pool {
     use sui::object::{Self, UID};
     use sui::balance::{Self, Balance};
     use sui::coin::{Self, Coin};
@@ -7,9 +7,9 @@ module sui_hedge_fund::liquidity_pool {
     use sui::math;
     use sui::event;
     
-    use sui_hedge_fund::tokens::{WBTC, WETH, WSOL, WAVAX};
-    use sui_hedge_fund::events;
-    use sui_hedge_fund::constants;
+    use akane::tokens::{WBTC, WETH, WSOL, WAVAX};
+    use akane::events;
+    use akane::constants;
 
     const FEE_NUMERATOR: u64 = 3;
     const FEE_DENOMINATOR: u64 = 1000; // 0.3% fee

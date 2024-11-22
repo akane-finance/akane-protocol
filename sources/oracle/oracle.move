@@ -1,10 +1,10 @@
-module sui_hedge_fund::oracle {
+module akane::oracle {
     use sui::object::{Self, UID};
     use sui::table::{Self, Table};
     use sui::transfer;
     use sui::tx_context::{Self, TxContext};
-    use sui_hedge_fund::events;
-    use sui_hedge_fund::constants;
+    use akane::events;
+    use akane::constants;
 
     struct PriceOracle has key {
         id: UID,

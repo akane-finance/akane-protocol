@@ -1,4 +1,4 @@
-module sui_hedge_fund::tokens {
+module akane::tokens {
     use sui::object::{Self, UID};
     use sui::coin::{Self, Coin};
     use sui::tx_context::TxContext;

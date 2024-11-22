@@ -1,8 +1,8 @@
-module sui_hedge_fund::crypto_strategy {
+module akane::crypto_strategy {
     use sui::object::{Self, UID};
     use sui::tx_context::TxContext;
-    use sui_hedge_fund::strategy_interface::{Self, StrategyInfo, Allocation};
-    use sui_hedge_fund::constants;
+    use akane::strategy_interface::{Self, StrategyInfo, Allocation};
+    use akane::constants;
 
     struct CryptoStrategy has key {
         id: UID,

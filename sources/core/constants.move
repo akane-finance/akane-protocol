@@ -1,4 +1,4 @@
-module sui_hedge_fund::constants {
+module akane::constants {
     // Token types
     const BTC: u8 = 1;
     const ETH: u8 = 2;

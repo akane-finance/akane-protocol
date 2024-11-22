@@ -1,4 +1,4 @@
-module sui_hedge_fund::events {
+module akane::events {
     use sui::event;
     use sui::object::ID;
 

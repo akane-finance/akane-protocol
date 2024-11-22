@@ -1,8 +1,8 @@
-module sui_hedge_fund::gaming_strategy {
+module akane::gaming_strategy {
     use sui::object::{Self, UID};
     use sui::tx_context::TxContext;
-    use sui_hedge_fund::strategy_interface::{Self, StrategyInfo, Allocation};
-    use sui_hedge_fund::constants;
+    use akane::strategy_interface::{Self, StrategyInfo, Allocation};
+    use akane::constants;
     use std::vector;
 
     struct GamingStrategy has key {
