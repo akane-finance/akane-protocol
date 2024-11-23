@@ -65,11 +65,11 @@ module akane::strategy_registry {
         );
 
         table::add(&mut registry.strategies, strategy_id, info);
-        registry.strategy_count = strategy_id;
+        registry.strategy_count = registry.strategy_count + 1;
 
         events::emit_strategy_registered(
             strategy_id,
-            strategy_interface::get_name(&info),
+            strategy_interface::get_name(&info), // get_name already returns owned vector
             tx_context::epoch(ctx)
         );
     }
