@@ -29,6 +29,6 @@ flavor = "sui"
 
 [env.akane]
 chain-id = "66bc2b87"
-original-published-id = "0x1f171e582cdac2d6ed2e82458b548fed80571f3127a6fbbd7ac91ae5106befaf"
-latest-published-id = "0x1f171e582cdac2d6ed2e82458b548fed80571f3127a6fbbd7ac91ae5106befaf"
+original-published-id = "0xcda4e48b57664d2fe9dce1829016dd9b026944a9e705c5882ae5b4c980766e2d"
+latest-published-id = "0xcda4e48b57664d2fe9dce1829016dd9b026944a9e705c5882ae5b4c980766e2d"
 published-version = "1"

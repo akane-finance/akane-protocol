@@ -6,59 +6,37 @@ module akane::strategy_interface {
         description: vector<u8>,
         allocations: vector<AllocationPair>,
         min_investment: u64,
-        risk_level: u64
+        risk_level: u8 // Changed to u8 since risk levels are small
     }
 
     struct AllocationPair has store, copy, drop {
         token: u8,
-        percentage: u64
+        percentage: u8 // Changed to u8 since percentages are 0-100
     }
 
-    struct AllocationInput has copy, drop {
-        token: u8,
-        percentage: u64
+    // Removed redundant AllocationInput struct
+    public fun create_allocation(token: u8, percentage: u8): AllocationPair {
+        assert!(percentage <= 100, 0); // Basic validation
+        AllocationPair { token, percentage }
     }
-
-    public fun create_allocation(token: u8, percentage: u64): AllocationPair {
-        AllocationPair {
-            token,
-            percentage
-        }
-    }
-
-    public fun create_allocation_input(token: u8, percentage: u64): AllocationInput {
-        AllocationInput {
-            token,
-            percentage
-        }
-    }
-
-    public fun create_allocations(inputs: vector<AllocationInput>): vector<AllocationPair> {
-        let allocations = vector::empty();
-        let i = 0;
-        let len = vector::length(&inputs);
-        
-        while (i < len) {
-            let input = vector::remove(&mut inputs, 0);
-            vector::push_back(&mut allocations, AllocationPair { 
-                token: input.token, 
-                percentage: input.percentage 
-            });
-            i = i + 1;
-        };
-        
-        allocations
-    }
-
-
 
     public fun create_strategy_info(
         name: vector<u8>,
         description: vector<u8>,
         allocations: vector<AllocationPair>,
         min_investment: u64,
-        risk_level: u64
+        risk_level: u8
     ): StrategyInfo {
+        // Validate total allocation = 100%
+        let total = 0u8;
+        let i = 0;
+        let len = vector::length(&allocations);
+        while (i < len) {
+            total = total + vector::borrow(&allocations, i).percentage;
+            i = i + 1;
+        };
+        assert!(total == 100, 0);
+        
         StrategyInfo {
             name,
             description,
@@ -68,15 +46,10 @@ module akane::strategy_interface {
         }
     }
 
-    public fun destroy_strategy_info(info: StrategyInfo) {
-        let StrategyInfo { name: _, description: _, allocations: _, min_investment: _, risk_level: _ } = info;
-    }
-
-    // Getters
-    public fun get_name(info: &StrategyInfo): vector<u8> { *&info.name }
-    public fun get_description(info: &StrategyInfo): vector<u8> { *&info.description }
-    public fun get_allocations(info: &StrategyInfo): vector<AllocationPair> { *&info.allocations }
+    // Simplified getters
+    public fun get_name(info: &StrategyInfo): &vector<u8> { &info.name }
+    public fun get_description(info: &StrategyInfo): &vector<u8> { &info.description }
+    public fun get_allocations(info: &StrategyInfo): &vector<AllocationPair> { &info.allocations }
     public fun get_min_investment(info: &StrategyInfo): u64 { info.min_investment }
-    public fun get_risk_level(info: &StrategyInfo): u64 { info.risk_level }
+    public fun get_risk_level(info: &StrategyInfo): u8 { info.risk_level }
 }
-

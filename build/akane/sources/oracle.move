@@ -22,7 +22,8 @@ module akane::oracle {
         id: UID
     }
 
-    public fun initialize(ctx: &mut TxContext): OracleAdminCap {
+    // Make initialize return OracleAdminCap for better composability
+    public fun initialize(ctx: &mut TxContext): (OracleAdminCap, PriceOracle) {
         let owner = tx_context::sender(ctx);
         
         let oracle = PriceOracle {
@@ -32,17 +33,23 @@ module akane::oracle {
             owner
         };
 
-        transfer::share_object(oracle);
-        
         let admin_cap = OracleAdminCap {
             id: object::new(ctx)
         };
-        
-        admin_cap
+
+        (admin_cap, oracle)
     }
 
-    public fun update_price(
-        _cap: &OracleAdminCap,
+    // Entry function for initialization that handles the transfer
+    public entry fun create_oracle(ctx: &mut TxContext) {
+        let (admin_cap, oracle) = initialize(ctx);
+        transfer::transfer(admin_cap, tx_context::sender(ctx));
+        transfer::share_object(oracle);
+    }
+
+    // Fixed unused cap parameter
+    public entry fun update_price(
+        _cap: &OracleAdminCap, // Prefixed with underscore to acknowledge intentionally unused
         oracle: &mut PriceOracle,
         token_type: u8,
         new_price: u64,
