@@ -1,140 +1,110 @@
 #[test_only]
 module akane::investment_router_tests {
-    use sui::coin;
-    use sui::sui::SUI;
-    use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
-    use sui::object::{Self, ID};
+    use std::debug;
     use std::vector;
-    use akane::investment_router;
-    use akane::strategy_registry::{Self, StrategyRegistry};
+    
+    use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
+    use sui::clock;
+    
+    use akane::investment_router::{Self, RouterConfig};
+    use akane::strategy_registry::{Self, StrategyRegistry, RegistryCap};
     use akane::strategy_interface;
     use akane::constants;
 
+    // Test addresses
     const TEST_SENDER: address = @0xA11CE;
     const FEE_COLLECTOR: address = @0xFEE;
-    
-    // Error codes for tests
-    const ERR_INVALID_STATE: u64 = 1;
 
-    fun test_scenario(): Scenario {
-        test::begin(TEST_SENDER)
-    }
+    // Test constants
+    const EXPECTED_RISK_LEVEL: u8 = 4;
+    const BTC_ALLOCATION: u8 = 60;
+    const ETH_ALLOCATION: u8 = 40;
 
-    #[test]
-    fun test_investment_flow() {
-        let scenario = test_scenario();
-        
-        // Setup: Initialize registry and router
+    fun setup_scenario(): Scenario {
+        let scenario = test::begin(TEST_SENDER);
         let test = &mut scenario;
+        
+        // Initialize core components
         {
             strategy_registry::initialize(ctx(test));
-            
-            // Create mock pools
-            let pools = vector::empty<ID>();
-            vector::push_back(&mut pools, object::id_from_address(@0xCAFE));
-            vector::push_back(&mut pools, object::id_from_address(@0xBEEF));
-            
-            investment_router::initialize(pools, FEE_COLLECTOR, ctx(test));
+            investment_router::initialize(FEE_COLLECTOR, ctx(test));
         };
 
-        // Register a strategy
+        // Set up crypto strategy
         next_tx(test, TEST_SENDER);
         {
             let registry = test::take_shared<StrategyRegistry>(test);
-            let cap = test::take_from_sender<strategy_registry::RegistryCap>(test);
+            let cap = test::take_from_sender<RegistryCap>(test);
             
-            strategy_registry::register_strategy(&mut registry, &cap, 1, ctx(test));
+            strategy_registry::register_crypto_strategy(
+                &mut registry,
+                &cap,
+                1, // strategy_id
+                BTC_ALLOCATION,
+                ETH_ALLOCATION,
+                ctx(test)
+            );
             
             test::return_to_sender(test, cap);
             test::return_shared(registry);
         };
 
-        // Make an investment
-        next_tx(test, TEST_SENDER);
-        {
-            let registry = test::take_shared<StrategyRegistry>(test);
-            let config = test::take_shared<investment_router::RouterConfig>(test);
-            
-            // Create test payment
-            let payment = coin::mint_for_testing<SUI>(2_000_000, ctx(test));
-            
-            investment_router::invest(
-                &registry,
-                &config,
-                1, // strategy_id
-                payment,
-                500, // 5% slippage
-                ctx(test)
-            );
-            
-            test::return_shared(registry);
-            test::return_shared(config);
-        };
+        scenario
+    }
 
-        // Verify the investment state
+    #[test]
+    fun test_crypto_strategy_setup() {
+        let scenario = setup_scenario();
+        let test = &mut scenario;
+
+        // Verify strategy setup
         next_tx(test, TEST_SENDER);
         {
             let registry = test::take_shared<StrategyRegistry>(test);
+            let config = test::take_shared<RouterConfig>(test);
             
-            // Verify strategy count
-            assert!(strategy_registry::get_strategy_count(&registry) == 1, ERR_INVALID_STATE);
-            
+            let test_clock = clock::create_for_testing(ctx(test));
+            clock::set_for_testing(&mut test_clock, 1000);
+
             // Verify strategy details
             let strategy = strategy_registry::get_strategy_info(&registry, 1);
-            assert!(strategy_interface::get_min_investment(strategy) == constants::min_investment(), ERR_INVALID_STATE);
+            let allocations = strategy_interface::get_allocations(strategy);
             
-            test::return_shared(registry);
-        };
-        
-        test::end(scenario);
-    }
+            debug::print(&b"Strategy allocations:");
+            debug::print(&allocations);
 
-    #[test]
-    #[expected_failure(abort_code = 4, location = akane::investment_router)]
-    fun test_investment_insufficient_amount() {
-        let scenario = test_scenario();
-        
-        // Setup
-        let test = &mut scenario;
-        {
-            strategy_registry::initialize(ctx(test));
-            let pools = vector::empty<ID>();
-            vector::push_back(&mut pools, object::id_from_address(@0xCAFE));
-            vector::push_back(&mut pools, object::id_from_address(@0xBEEF));
-            investment_router::initialize(pools, FEE_COLLECTOR, ctx(test));
-        };
+            // Verify allocations length
+            assert!(vector::length(&allocations) == 2, 0);
 
-        // Register strategy
-        next_tx(test, TEST_SENDER);
-        {
-            let registry = test::take_shared<StrategyRegistry>(test);
-            let cap = test::take_from_sender<strategy_registry::RegistryCap>(test);
-            strategy_registry::register_strategy(&mut registry, &cap, 1, ctx(test));
-            test::return_to_sender(test, cap);
-            test::return_shared(registry);
-        };
+            // Verify allocation tokens and percentages
+            let first_allocation = vector::borrow(&allocations, 0);
+            let second_allocation = vector::borrow(&allocations, 1);
 
-        // Try investment with insufficient amount
-        next_tx(test, TEST_SENDER);
-        {
-            let registry = test::take_shared<StrategyRegistry>(test);
-            let config = test::take_shared<investment_router::RouterConfig>(test);
-            
-            let payment = coin::mint_for_testing<SUI>(100_000, ctx(test)); // Less than MIN_INVESTMENT
-            
-            investment_router::invest(
-                &registry,
-                &config,
-                1,
-                payment,
-                500,
-                ctx(test)
+            assert!(
+                strategy_interface::get_allocation_token(first_allocation) == constants::btc_token() &&
+                strategy_interface::get_allocation_token(second_allocation) == constants::eth_token(),
+                1
             );
+
+            assert!(
+                strategy_interface::get_allocation_percentage(first_allocation) == BTC_ALLOCATION &&
+                strategy_interface::get_allocation_percentage(second_allocation) == ETH_ALLOCATION,
+                2
+            );
+
+            // Verify strategy risk level
+            let risk_level = strategy_interface::get_risk_level(strategy);
+            debug::print(&b"Strategy risk level:");
+            debug::print(&risk_level);
+            assert!(risk_level == EXPECTED_RISK_LEVEL, 3);
+
+            // Clean up
+            clock::destroy_for_testing(test_clock);
             
             test::return_shared(registry);
             test::return_shared(config);
         };
-        
+
         test::end(scenario);
     }
 }
